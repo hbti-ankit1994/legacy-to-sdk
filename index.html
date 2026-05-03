@@ -81,19 +81,6 @@ textarea::placeholder{color:var(--text2)}
 @media(max-width:768px){.workspace{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane{border-right:none;border-bottom:1px solid var(--border)}}
 </style>
 </head>
-<footer style="
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 11px;
-  color: var(--text2);
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  background: var(--bg2);
-">
-  Copyright ©2026 <a href="https://www.linkedin.com/in/ankit-srivastava-hbtiankit1994/" target="_blank">Ankit Srivastava</a> All Rights Reserved.
-</footer>
 <body>
 
 <header>
@@ -217,6 +204,18 @@ Load an example from the toolbar to see it in action.</div>
   <div class="stat">Output lines: <strong id="statLines">—</strong></div>
   <div class="stat">Confidence: <strong id="statConfidence">—</strong></div>
 </div>
+
+<footer style="
+  text-align: center;
+  font-size: 11px;
+  color: var(--text2);
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+">
+  Copyright ©2026 <a href="https://www.linkedin.com/in/ankit-srivastava-hbtiankit1994/" target="_blank">Ankit Srivastava</a> All Rights Reserved.
+</footer>
 
 <div class="modal-overlay" id="examplesModal">
   <div class="modal">
