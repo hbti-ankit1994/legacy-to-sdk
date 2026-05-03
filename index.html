@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>csproj SDK Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --border: #30363d; --border2: #484f58;
+  --accent: #58a6ff; --success: #3fb950; --warn: #d29922; --danger: #f85149;
+  --text: #c9d1d9; --text2: #8b949e; --white: #f0f6fc;
+  --mono: 'DM Mono','Consolas',monospace;
+  --display: 'Syne',sans-serif;
+  --r: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;display:flex;flex-direction:column;min-height:100vh}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:17px;font-weight:800;color:var(--white);letter-spacing:-0.02em}
+.logo-badge{background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:20px;letter-spacing:.03em}
+.header-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:16px}
+.header-meta a{color:var(--text2);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s}
+.header-meta a:hover{color:var(--accent)}
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.toolbar-group{display:flex;align-items:center;gap:6px}
+.toolbar-label{font-size:11px;color:var(--text2);margin-right:2px}
+select,input[type=text]{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 10px;outline:none;transition:border-color .15s}
+select:focus,input[type=text]:focus{border-color:var(--accent)}
+select{cursor:pointer}
+.toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:var(--r);background:var(--bg3);color:var(--text);padding:5px 14px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;white-space:nowrap}
+.btn:hover{border-color:var(--border2);background:var(--bg2)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn-primary:hover{background:#79b8ff;border-color:#79b8ff}
+.btn-success{background:var(--success);border-color:var(--success);color:var(--bg)}
+.btn-success:hover{background:#56d364;border-color:#56d364}
+.btn-sm{padding:3px 10px;font-size:11px}
+.workspace{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;overflow:hidden}
+.pane{display:flex;flex-direction:column;min-height:0;overflow:hidden;border-right:1px solid var(--border)}
+.pane:last-child{border-right:none}
+.pane-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.pane-title{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.pane-title strong{color:var(--text);font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%}
+.pane-actions{display:flex;gap:6px;align-items:center}
+.line-count{font-size:10px;color:var(--text2)}
+textarea,.output-pane{flex:1;min-height:0;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:16px;background:var(--bg);color:var(--text);border:none;outline:none;resize:none;tab-size:2}
+textarea::placeholder{color:var(--text2)}
+.output-pane{white-space:pre;cursor:text}
+.output-pane.empty{color:var(--text2);white-space:pre-wrap;cursor:default}
+.xml-tag{color:#7ee787}.xml-attr{color:#79c0ff}.xml-val{color:#a5d6ff}
+.xml-comment{color:#8b949e;font-style:italic}.xml-prolog{color:#d29922}
+.log-panel{background:var(--bg2);border-top:1px solid var(--border);height:150px;display:flex;flex-direction:column;flex-shrink:0}
+.log-header{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.log-title{font-size:11px;color:var(--text2)}
+.log-body{flex:1;overflow-y:auto;padding:8px 14px;font-size:11.5px;line-height:1.8}
+.log-entry{display:flex;gap:10px}
+.log-time{color:var(--text2);flex-shrink:0}
+.log-info{color:var(--accent)}.log-ok{color:var(--success)}.log-warn{color:var(--warn)}.log-err{color:var(--danger)}.log-skip{color:var(--text2)}
+.stats-bar{display:flex;align-items:center;background:var(--bg2);border-top:1px solid var(--border);padding:6px 16px;flex-shrink:0;flex-wrap:wrap;gap:4px}
+.stat{padding:0 14px;border-right:1px solid var(--border);font-size:11px;color:var(--text2)}
+.stat:first-child{padding-left:0}.stat:last-child{border-right:none}
+.stat strong{color:var(--text)}
+.diff-add{background:rgba(63,185,80,.1);display:inline-block;width:100%}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;max-width:580px;width:90%}
+.modal h2{font-family:var(--display);font-size:18px;font-weight:800;color:var(--white);margin-bottom:8px}
+.modal p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:16px}
+.modal .examples{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.example-chip{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--text);cursor:pointer;transition:border-color .15s;text-align:left}
+.example-chip:hover{border-color:var(--accent);color:var(--accent)}
+.example-chip code{color:var(--accent)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:768px){.workspace{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane{border-right:none;border-bottom:1px solid var(--border)}}
+</style>
+</head>
+<footer style="
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text2);
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+">
+  Copyright ©2026 <a href="https://www.linkedin.com/in/ankit-srivastava-hbtiankit1994/" target="_blank">Ankit Srivastava</a> All Rights Reserved.
+</footer>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#58a6ff"/>
+      <path d="M5 8h6M5 12h9M5 16h6" stroke="#0d1117" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M16 10l3 2-3 2" stroke="#0d1117" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    csproj <span class="logo-badge">SDK</span> Converter
+  </div>
+  <div class="header-meta">
+    <span>Legacy → SDK-style .csproj · No server · 100% local</span>
+    <a href="https://learn.microsoft.com/en-us/dotnet/core/project-sdk/overview" target="_blank">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      MS Docs
+    </a>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-group">
+    <span class="toolbar-label">SDK:</span>
+    <select id="sdkTarget">
+      <option value="Microsoft.NET.Sdk">Microsoft.NET.Sdk (library / console)</option>
+      <option value="Microsoft.NET.Sdk.Web">Microsoft.NET.Sdk.Web (ASP.NET Core)</option>
+      <option value="Microsoft.NET.Sdk.Worker">Microsoft.NET.Sdk.Worker (Worker service)</option>
+      <option value="Microsoft.NET.Sdk.Razor">Microsoft.NET.Sdk.Razor (Razor class lib)</option>
+    </select>
+  </div>
+  <div class="toolbar-group">
+    <span class="toolbar-label">TFM:</span>
+    <select id="tfm">
+      <option value="auto">Auto-detect</option>
+      <option value="net9.0">net9.0</option>
+      <option value="net8.0">net8.0</option>
+      <option value="net7.0">net7.0</option>
+      <option value="net6.0">net6.0</option>
+      <option value="net5.0">net5.0</option>
+      <option value="netcoreapp3.1">netcoreapp3.1</option>
+      <option value="netstandard2.1">netstandard2.1</option>
+      <option value="netstandard2.0">netstandard2.0</option>
+    </select>
+  </div>
+  <div class="toolbar-sep"></div>
+  <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="checkbox" id="keepComments" checked> Comments
+  </label>
+  <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="checkbox" id="nullable" checked> Nullable
+  </label>
+  <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="checkbox" id="implicit"> ImplicitUsings
+  </label>
+  <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+    <input type="checkbox" id="keepNugetVer" checked> Pin NuGet versions
+  </label>
+  <div class="toolbar-sep"></div>
+  <button class="btn" onclick="showExamples()">&#128193; Examples</button>
+  <button class="btn btn-primary" onclick="convert()">&#9889; Convert  <kbd style="opacity:.6;font-size:10px">Ctrl+Enter</kbd></button>
+  <button class="btn" id="downloadBtn" onclick="downloadOutput()" style="display:none">&#8595; Download</button>
+  <button class="btn" id="diffBtn" onclick="toggleDiff()" style="display:none">Diff</button>
+</div>
+
+<div class="workspace">
+  <div class="pane">
+    <div class="pane-header">
+      <div class="pane-title">
+        <div class="dot" style="background:#d29922"></div>
+        <strong>Legacy .csproj</strong><span>— paste or drop file</span>
+      </div>
+      <div class="pane-actions">
+        <span class="line-count" id="inputLines">0 lines</span>
+        <button class="btn btn-sm" onclick="clearInput()">Clear</button>
+        <button class="btn btn-sm" onclick="document.getElementById('fileInput').click()">Open</button>
+        <input type="file" id="fileInput" accept=".csproj,.xml" style="display:none" onchange="loadFile(event)">
+      </div>
+    </div>
+    <textarea id="inputArea"
+      placeholder="Paste your legacy .csproj here…&#10;&#10;Supports:&#10;  • Classic format with ToolsVersion + xmlns&#10;  • packages.config NuGet references (HintPath)&#10;  • GAC system references&#10;  • ProjectReference, custom Targets/Imports&#10;  • WinForms / WPF detection&#10;&#10;Drag &amp; drop a .csproj file onto this panel."
+      oninput="onInputChange()"
+      ondragover="event.preventDefault()"
+      ondrop="onDrop(event)"
+      spellcheck="false"></textarea>
+  </div>
+
+  <div class="pane">
+    <div class="pane-header">
+      <div class="pane-title">
+        <div class="dot" id="outputDot" style="background:var(--border2)"></div>
+        <strong>SDK-style .csproj</strong><span id="outputLabel">— output</span>
+      </div>
+      <div class="pane-actions">
+        <span class="line-count" id="outputLines"></span>
+        <button class="btn btn-success btn-sm" id="copyBtn" onclick="copyOutput()" style="display:none">
+  &#10752; Copy
+</button>
+      </div>
+    </div>
+    <div class="output-pane empty" id="outputArea">Converted SDK-style project file will appear here.
+
+Press ⚡ Convert (or Ctrl+Enter) to run the conversion.
+Load an example from the toolbar to see it in action.</div>
+  </div>
+</div>
+
+<div class="log-panel">
+  <div class="log-header">
+    <span class="log-title">Conversion log</span>
+    <button class="btn btn-sm" onclick="clearLog()">Clear</button>
+  </div>
+  <div class="log-body" id="logBody"></div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">Status: <strong id="statStatus">—</strong></div>
+  <div class="stat">Imports dropped: <strong id="statRemoved">—</strong></div>
+  <div class="stat">NuGet packages: <strong id="statPkgs">—</strong></div>
+  <div class="stat">Project refs: <strong id="statRefs">—</strong></div>
+  <div class="stat">Warnings: <strong id="statWarns">—</strong></div>
+  <div class="stat">Output lines: <strong id="statLines">—</strong></div>
+  <div class="stat">Confidence: <strong id="statConfidence">—</strong></div>
+</div>
+
+<div class="modal-overlay" id="examplesModal">
+  <div class="modal">
+    <h2>Load an example</h2>
+    <p>Select a sample legacy project to see the conversion in action. All processing is local — nothing is sent anywhere.</p>
+    <div class="examples">
+      <button class="example-chip" onclick="loadExample('classlib')">
+        <strong>Class library</strong> — packages.config, GAC refs, AssemblyInfo, ProjectReference
+      </button>
+      <button class="example-chip" onclick="loadExample('webapi')">
+        <strong>ASP.NET Web API</strong> — EntityFramework 6, WebApi client, classic web project
+      </button>
+      <button class="example-chip" onclick="loadExample('winforms')">
+        <strong>WinForms app (.NET 4.8)</strong> — designer files, Resources, Settings, app.ico
+      </button>
+      <button class="example-chip" onclick="loadExample('console')">
+        <strong>Console app</strong> — CommandLineParser, Newtonsoft.Json, simple structure
+      </button>
+    </div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = {
+classlib:`<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MyCompany.Core</RootNamespace>
+    <AssemblyName>MyCompany.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp></NuGetPackageImportStamp>
+    <Authors>MyCompany</Authors>
+    <Company>MyCompany Ltd.</Company>
+    <Description>Core business logic library</Description>
+    <Version>1.2.3</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\\Debug\\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\\Release\\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\\packages\\Newtonsoft.Json.13.0.1\\lib\\net45\\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e4a1aa">
+      <HintPath>..\\packages\\Serilog.2.10.0\\lib\\net46\\Serilog.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Models\\Customer.cs" />
+    <Compile Include="Models\\Order.cs" />
+    <Compile Include="Services\\CustomerService.cs" />
+    <Compile Include="Properties\\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\MyCompany.Common\\MyCompany.Common.csproj">
+      <Project>{B1B2C3D4-E5F6-7890-ABCD-EF1234567891}</Project>
+      <Name>MyCompany.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
+  <Import Project="..\\packages\\Newtonsoft.Json.13.0.1\\build\\net45\\Newtonsoft.Json.targets" Condition="Exists('..\\packages\\Newtonsoft.Json.13.0.1\\build\\net45\\Newtonsoft.Json.targets')" />
+</Project>`,
+
+webapi:`<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props" />
+  <PropertyGroup>
+    <ProjectGuid>{DEADBEEF-0000-0000-0000-000000000001}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>MyApi</RootNamespace>
+    <AssemblyName>MyApi</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+      <HintPath>..\\packages\\EntityFramework.6.4.4\\lib\\net45\\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+      <HintPath>..\\packages\\EntityFramework.6.4.4\\lib\\net45\\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral">
+      <HintPath>..\\packages\\Newtonsoft.Json.12.0.3\\lib\\net45\\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controllers\\CustomersController.cs" />
+    <Compile Include="Controllers\\OrdersController.cs" />
+    <Compile Include="Models\\Customer.cs" />
+    <Compile Include="Data\\AppDbContext.cs" />
+    <Compile Include="Properties\\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Web.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
+</Project>`,
+
+winforms:`<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props" />
+  <PropertyGroup>
+    <ProjectGuid>{CAFEBABE-0000-0000-0000-000000000002}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MyWinApp</RootNamespace>
+    <AssemblyName>MyWinApp</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\\Debug\\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\\Release\\</OutputPath>
+    <Optimize>true</Optimize>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral">
+      <HintPath>..\\packages\\Newtonsoft.Json.13.0.3\\lib\\net45\\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Forms\\MainForm.cs"><SubType>Form</SubType></Compile>
+    <Compile Include="Forms\\MainForm.Designer.cs"><DependentUpon>MainForm.cs</DependentUpon></Compile>
+    <Compile Include="Forms\\SettingsForm.cs"><SubType>Form</SubType></Compile>
+    <Compile Include="Forms\\SettingsForm.Designer.cs"><DependentUpon>SettingsForm.cs</DependentUpon></Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Forms\\MainForm.resx"><DependentUpon>MainForm.cs</DependentUpon></EmbeddedResource>
+    <EmbeddedResource Include="Properties\\Resources.resx"><Generator>ResXFileCodeGenerator</Generator></EmbeddedResource>
+    <None Include="Properties\\Settings.settings"><Generator>SettingsCodeGenerator</Generator></None>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
+</Project>`,
+
+console:`<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props" />
+  <PropertyGroup>
+    <ProjectGuid>{11111111-2222-3333-4444-555555555555}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MyConsoleApp</RootNamespace>
+    <AssemblyName>MyConsoleApp</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\\Debug\\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\\Release\\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="CommandLine, Version=2.8.0.0, Culture=neutral">
+      <HintPath>..\\packages\\CommandLineParser.2.8.0\\lib\\net45\\CommandLine.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral">
+      <HintPath>..\\packages\\Newtonsoft.Json.13.0.3\\lib\\net45\\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Options.cs" />
+    <Compile Include="Processors\\DataProcessor.cs" />
+    <Compile Include="Properties\\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
+</Project>`
+};
+
+const GAC = new Set([
+  'System','System.Core','System.Data','System.Data.DataSetExtensions',
+  'System.Net.Http','System.Numerics','System.Runtime.Serialization',
+  'System.ServiceModel','System.Web','System.Web.ApplicationServices',
+  'System.Web.Http','System.Web.Services','System.Windows.Forms',
+  'System.Drawing','System.Xml','System.Xml.Linq','System.Configuration',
+  'System.ComponentModel.DataAnnotations','System.Runtime','System.Security',
+  'System.Transactions','System.DirectoryServices','System.Management',
+  'System.Messaging','Microsoft.CSharp','Microsoft.VisualBasic',
+  'PresentationCore','PresentationFramework','WindowsBase','System.Xaml'
+]);
+
+const PROP_KEEP = {
+  AssemblyName:1, RootNamespace:1, Authors:1, Company:1, Description:1,
+  Version:1, AssemblyVersion:1, FileVersion:1, Copyright:1,
+  PackageLicenseExpression:1, ApplicationIcon:1, Prefer32Bit:1,
+  AllowUnsafeBlocks:1, LangVersion:1, TreatWarningsAsErrors:1,
+  SignAssembly:1, AssemblyOriginatorKeyFile:1, GenerateDocumentationFile:1,
+  DocumentationFile:1, NoWarn:1, StartupObject:1, Platforms:1, AutoGenerateBindingRedirects:1,
+  PlatformTarget:1
+};
+
+const logEl = document.getElementById('logBody');
+const ts = () => new Date().toLocaleTimeString('en-US',{hour12:false});
+const addLog = (msg,cls) => {
+  const d = document.createElement('div');
+  d.className='log-entry';
+  d.innerHTML=`<span class="log-time">${ts()}</span><span class="${cls}">${msg}</span>`;
+  logEl.appendChild(d);
+  logEl.scrollTop=logEl.scrollHeight;
+};
+const log={
+  info:m=>addLog(m,'log-info'), ok:m=>addLog(m,'log-ok'),
+  warn:m=>addLog(m,'log-warn'), err:m=>addLog(m,'log-err'),
+  skip:m=>addLog(m,'log-skip'), clear:()=>logEl.innerHTML=''
+};
+
+function hlXml(xml){
+  return xml
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(&lt;\?[^?]*\?&gt;)/g,'<span class="xml-prolog">$1</span>')
+    .replace(/(&lt;!--[\s\S]*?--&gt;)/g,'<span class="xml-comment">$1</span>')
+    .replace(/(&lt;\/?)([\w.:]+)/g,'$1<span class="xml-tag">$2</span>')
+    .replace(/([\w:]+)=(&quot;)(.*?)(&quot;)/g,'<span class="xml-attr">$1</span>=$2<span class="xml-val">$3</span>$4');
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function ind(n){return '  '.repeat(n)}
+function getEl(parent,tag){const n=parent.querySelector(tag);return n?n.textContent.trim():null}
+
+function mapTfv(tfv){
+  if(!tfv)return null;
+  const v=tfv.replace('v','');
+  const parts=v.split('.');
+  return 'net'+parts.join('');
+}
+
+function convertCsproj(xml){
+  const stats={removed:0,packages:0,projRefs:0,warns:0};
+  const hasSystemWeb = xml.includes('System.Web');
+  const hasPackagesConfig = xml.toLowerCase().includes('packages.config');
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(xml,'text/xml');
+  if(doc.querySelector('parsererror')){
+    throw new Error('XML parse error — check input is valid XML');
+  }
+
+  const root=doc.documentElement;
+
+  const sdk      = document.getElementById('sdkTarget').value;
+  const tfmOvr   = document.getElementById('tfm').value;
+  const comments = document.getElementById('keepComments').checked;
+  const nullable = document.getElementById('nullable').checked;
+  const implicit = document.getElementById('implicit').checked;
+  const keepNugetVer = document.getElementById('keepNugetVer').checked;
+
+  const allPGs=[...root.querySelectorAll(':scope > PropertyGroup')];
+  const mainPG=allPGs.find(pg=>!pg.hasAttribute('Condition'))||allPGs[0];
+  const props={};
+  if(mainPG){
+    for(const c of mainPG.children){
+      props[c.tagName]=c.textContent.trim();
+    }
+  }
+
+  let tfm;
+  if(tfmOvr!=='auto'){
+    tfm=tfmOvr;
+  } else {
+    if(props.TargetFrameworkVersion){
+      tfm = mapTfv(props.TargetFrameworkVersion);
+      log.info(`TargetFrameworkVersion ${props.TargetFrameworkVersion} → ${tfm}`);
+    } else {
+      tfm = 'net472';
+      log.warn('No TargetFrameworkVersion → defaulting to net472 (safe)');
+      stats.warns++;
+    }
+  }
+
+  const outputType=(props.OutputType||'Library').trim();
+
+  const nugetPkgs=[];
+  const customRefs=[];
+  const projRefs=[];
+  let hasWinForms=false, hasWpf=false;
+
+  for(const ig of root.querySelectorAll(':scope > ItemGroup')){
+
+    for(const pr of ig.querySelectorAll('PackageReference')){
+      const name = pr.getAttribute('Include');
+      const version = pr.getAttribute('Version') || '*';
+      if(name){
+        nugetPkgs.push({name,version});
+        stats.packages++;
+        log.ok(`PackageReference preserved: ${name} ${version}`);
+      }
+    }
+
+    for(const ref of ig.querySelectorAll('Reference')){
+      const inc=(ref.getAttribute('Include')||'').trim();
+      const name=inc.split(',')[0].trim();
+      const hp=getEl(ref,'HintPath');
+
+      if(name==='System.Windows.Forms') hasWinForms=true;
+      if(name==='PresentationCore'||name==='WindowsBase') hasWpf=true;
+
+      if(GAC.has(name)){
+        log.skip(`Drop implicit GAC: ${name}`);
+        stats.removed++;
+        continue;
+      }
+
+      if(hp&&hp.includes('packages\\')){
+        const m=hp.match(/packages\\([^\\]+)\\lib/);
+        if(m){
+          const folder=m[1];
+          const vm=folder.match(/^(.+?)\.(\d+\.\d+(?:\.\d+)*)$/);
+          if(vm){
+            nugetPkgs.push({name:vm[1],version:vm[2]});
+            log.ok(`PackageReference: ${vm[1]} v${vm[2]}`);
+          } else {
+            nugetPkgs.push({name:folder,version:'*'});
+            log.warn(`Version parse failed: ${folder}`);
+            stats.warns++;
+          }
+          stats.packages++; stats.removed++;
+        }
+      } else {
+        customRefs.push({inc,hp});
+        log.warn(`Kept custom reference: ${name}`);
+        stats.warns++;
+      }
+    }
+
+    for(const pr of ig.querySelectorAll('ProjectReference')){
+      projRefs.push((pr.getAttribute('Include')||'').trim());
+      stats.projRefs++;
+    }
+  }
+
+  const pkgMap=new Map();
+  for(const p of nugetPkgs){
+    if(!pkgMap.has(p.name)){
+      pkgMap.set(p.name,p.version);
+    }
+  }
+  const uniquePkgs=[...pkgMap.entries()].map(([n,v])=>({name:n,version:v}));
+
+  const hasAppConfig = xml.toLowerCase().includes('app.config');
+
+  const fwdProps={};
+  for(const [k,v] of Object.entries(props)){
+    if(PROP_KEEP[k] && v){
+      fwdProps[k]=v;
+    }
+  }
+  
+  const debugPG = allPGs.find(pg =>
+  (pg.getAttribute('Condition')||'').includes('Debug')
+    );
+
+    const platformTarget = debugPG?.querySelector('PlatformTarget')?.textContent?.trim();
+
+    if(platformTarget){
+      fwdProps['PlatformTarget'] = platformTarget;
+    }
+
+  const L=[];
+
+  if(comments){
+    L.push(`<!-- SDK-style conversion -->`);
+    if(hasAppConfig){
+      L.push(`<!-- WARNING: App.config detected — verify binding redirects -->`);
+    }
+  }
+
+  L.push(`<Project Sdk="${sdk}">`);
+  L.push('');
+  L.push(`${ind(1)}<PropertyGroup>`);
+  L.push(`${ind(2)}<TargetFramework>${tfm}</TargetFramework>`);
+
+  if(outputType && outputType!=='Library'){
+    L.push(`${ind(2)}<OutputType>${outputType}</OutputType>`);
+  }
+
+  for(const [k,v] of Object.entries(fwdProps)){
+    L.push(`${ind(2)}<${k}>${v}</${k}>`);
+  }
+
+  if(nullable){
+    L.push(`${ind(2)}<Nullable>enable</Nullable>`);
+  }
+
+  if(implicit){
+    L.push(`${ind(2)}<ImplicitUsings>enable</ImplicitUsings>`);
+  }
+
+  if(hasWinForms){
+    L.push(`${ind(2)}<UseWindowsForms>true</UseWindowsForms>`);
+    log.warn('WinForms detected — ensure Windows TFM if moving to .NET 5+');
+    stats.warns++;
+  }
+
+  if(hasWpf){
+    L.push(`${ind(2)}<UseWPF>true</UseWPF>`);
+    stats.warns++;
+  }
+
+  L.push(`${ind(1)}</PropertyGroup>`);
+
+  if(uniquePkgs.length){
+    L.push('');
+    L.push(`${ind(1)}<ItemGroup>`);
+    for(const p of uniquePkgs){
+      if(keepNugetVer){
+        L.push(`${ind(2)}<PackageReference Include="${p.name}" Version="${p.version}" />`);
+      } else {
+        L.push(`${ind(2)}<PackageReference Include="${p.name}" />`);
+      }
+    }
+    L.push(`${ind(1)}</ItemGroup>`);
+  }
+
+  if(customRefs.length){
+    L.push('');
+    L.push(`${ind(1)}<ItemGroup>`);
+    for(const r of customRefs){
+      if(r.hp){
+        L.push(`${ind(2)}<Reference Include="${r.inc}">`);
+        L.push(`${ind(3)}<HintPath>${r.hp}</HintPath>`);
+        L.push(`${ind(2)}</Reference>`);
+      } else {
+        L.push(`${ind(2)}<Reference Include="${r.inc}" />`);
+      }
+    }
+    L.push(`${ind(1)}</ItemGroup>`);
+  }
+
+      if(projRefs.length){
+        L.push('');
+        L.push(`${ind(1)}<ItemGroup>`);
+        for(const pr of projRefs){
+          L.push(`${ind(2)}<ProjectReference Include="${pr}" />`);
+        }
+        L.push(`${ind(1)}</ItemGroup>`);
+      }
+
+      L.push('');
+      L.push(`</Project>`);
+      
+      let score = 100;
+
+    if (hasSystemWeb) {
+      score -= 40;
+      log.warn('System.Web detected → requires ASP.NET Core migration');
+      stats.warns++;
+    }
+
+    if (hasPackagesConfig) {
+      score -= 20;
+      log.warn('packages.config detected → migrate to PackageReference');
+      stats.warns++;
+    }
+
+    if (hasAppConfig) {
+      score -= 10;
+    }
+
+    score -= customRefs.length * 10;
+
+    if (hasWinForms || hasWpf) {
+      score -= 5;
+    }
+
+    if (uniquePkgs.length > 0 && customRefs.length === 0) {
+      score += 5;
+    }
+
+    if (stats.warns === 0) {
+      score += 5;
+    }
+
+    score = Math.max(0, Math.min(100, score));
+
+    stats.confidence = score;
+
+  return {output:L.join('\n'), stats};
+}
+
+let lastOutput='', showDiff=false;
+
+function convert(){
+  document.getElementById('copyBtn').disabled = false;
+  const input=document.getElementById('inputArea').value.trim();
+  if(!input){ log.err('No input — paste a .csproj file first'); return; }
+  log.clear(); log.info('Starting conversion...');
+  let result;
+  try{ result=convertCsproj(input); }
+  catch(e){ log.err('Error: '+e.message); document.getElementById('statStatus').textContent='Error'; return; }
+
+  lastOutput=result.output;
+  const {stats}=result;
+  const outEl=document.getElementById('outputArea');
+  outEl.className='output-pane';
+  outEl.innerHTML=hlXml(lastOutput);
+  document.getElementById('outputDot').style.background='var(--success)';
+  document.getElementById('outputLabel').textContent='— ready';
+  const lines=lastOutput.split('\n').length;
+  document.getElementById('outputLines').textContent=lines+' lines';
+  document.getElementById('downloadBtn').style.display='';
+  document.getElementById('copyBtn').style.display = 'inline-flex';
+  const diffBtn = document.getElementById('diffBtn');
+  diffBtn.style.display = '';
+  diffBtn.textContent = 'Diff';
+  showDiff = false;
+  document.getElementById('diffBtn').style.display='';
+  document.getElementById('statStatus').textContent='OK';
+  document.getElementById('statRemoved').textContent=stats.removed;
+  document.getElementById('statPkgs').textContent=stats.packages;
+  document.getElementById('statRefs').textContent=stats.projRefs;
+  document.getElementById('statWarns').textContent=stats.warns;
+  document.getElementById('statLines').textContent=lines;
+  document.getElementById('statConfidence').textContent = stats.confidence + '%';
+  const confEl = document.getElementById('statConfidence');
+  confEl.textContent = stats.confidence + '%';
+
+  if (stats.confidence >= 80) confEl.style.color = 'var(--success)';
+  else if (stats.confidence >= 50) confEl.style.color = 'var(--warn)';
+  else confEl.style.color = 'var(--danger)';
+  log.ok(`Done — ${lines} lines · ${stats.packages} packages · ${stats.warns} warnings`);
+}
+
+function copyOutput(){
+  if(!lastOutput)return;
+  navigator.clipboard.writeText(lastOutput).then(()=>{
+    const b=document.getElementById('copyBtn');
+    const o=b.textContent; b.textContent='✓ Copied!';
+    setTimeout(()=>b.textContent=o,1800);
+  });
+}
+
+function downloadOutput(){
+  if(!lastOutput)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lastOutput],{type:'text/xml'}));
+  a.download='SDKConvertedProject.csproj'; a.click();
+}
+
+function toggleDiff(){
+  showDiff=!showDiff;
+  const btn=document.getElementById('diffBtn');
+  const out=document.getElementById('outputArea');
+  if(showDiff){
+    btn.textContent='Output';
+    const inLines=document.getElementById('inputArea').value.split('\n');
+    const html=lastOutput.split('\n').map(l=>{
+      const found=inLines.some(il=>il.trim()===l.trim()&&l.trim()!=='');
+      return !found&&l.trim() ? `<span class="diff-add">${esc(l)}</span>` : esc(l);
+    }).join('\n');
+    out.innerHTML=html;
+  } else {
+    btn.textContent='Diff';
+    out.innerHTML=hlXml(lastOutput);
+  }
+}
+
+function clearInput(){
+  document.getElementById('inputArea').value='';
+  onInputChange();
+  const out=document.getElementById('outputArea');
+  out.className='output-pane empty';
+  out.textContent='Converted SDK-style project file will appear here.\n\nPress ⚡ Convert (or Ctrl+Enter) to run the conversion.';
+  document.getElementById('outputDot').style.background='var(--border2)';
+  document.getElementById('outputLabel').textContent='— output';
+  ['copyBtn','downloadBtn','diffBtn'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('outputLines').textContent='';
+  document.getElementById('copyBtn').disabled = true;
+  lastOutput=''; showDiff=false; log.clear();
+  ['statStatus','statRemoved','statPkgs','statRefs','statWarns','statLines']
+    .forEach(id=>document.getElementById(id).textContent='—');
+}
+
+function onInputChange(){
+  const n=document.getElementById('inputArea').value.split('\n').length;
+  document.getElementById('inputLines').textContent=n+' lines';
+}
+
+function loadFile(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{ document.getElementById('inputArea').value=ev.target.result; onInputChange(); log.info('Loaded: '+f.name); };
+  r.readAsText(f); e.target.value='';
+}
+
+function onDrop(e){
+  e.preventDefault();
+  const f=e.dataTransfer.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{ document.getElementById('inputArea').value=ev.target.result; onInputChange(); log.info('Dropped: '+f.name); };
+  r.readAsText(f);
+}
+
+function showExamples(){ document.getElementById('examplesModal').classList.add('open'); }
+function closeModal()  { document.getElementById('examplesModal').classList.remove('open'); }
+function clearLog()    { logEl.innerHTML=''; }
+
+function loadExample(key){
+  closeModal();
+  document.getElementById('inputArea').value=EXAMPLES[key];
+  onInputChange(); log.info('Example loaded: '+key);
+  convert();
+}
+
+document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();convert();} });
+document.getElementById('examplesModal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeModal(); });
+</script>
+</body>
+</html>
